@@ -50,7 +50,7 @@ class MyBot < Ebooks::Bot
   def on_mention(tweet)
     # Reply to a mention
     # reply(tweet, "oh hullo")
-    response_delay = rand(self.config["response_delay"].to_i)
+    response_delay = rand(@@config["response_delay"].to_i)
     scheduler.in "#{response_delay}m" do
       reply(tweet, @tweet_model.make_response(tweet.text))
     end
