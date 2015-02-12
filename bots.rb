@@ -1,33 +1,33 @@
 require 'twitter_ebooks'
-require 'twitter_ebooks/model'
 
 # This is an example bot definition with event handlers commented out
 # You can define and instantiate as many bots as you like
 
+require 'yaml'
+
 class MyBot < Ebooks::Bot
   # Configuration here applies to all MyBots
+  attr_accessor :model
+  attr_accessor :interval
+  @@config = YAML.load(File.open("./config.yml"))
   def configure
     # Consumer details come from registering an app at https://dev.twitter.com/
     # Once you have consumer details, use "ebooks auth" for new access tokens
-    self.consumer_key = ENV['TWITTER_CONSUMER_KEY'] # Your app consumer key
-    self.consumer_secret = ENV['TWITTER_CONSUMER_SECRET'] # Your app consumer secret
+    self.consumer_key = @@config["consumer_key"]
+    self.consumer_secret = @@config["consumer_secret"]
 
     # Users to block instead of interacting with
-    self.blacklist = ['cmcbot']
+    self.blacklist = @@config["blacklist"]
 
     # Range in seconds to randomize delay when bot.delay is called
     self.delay_range = 1..6
   end
 
   def on_startup
-    @model = Ebooks::Model.load('model/MentatMode.model')
-
-    scheduler.every '60m' do
-      # Tweet something every hour
-      # See https://github.com/jmettraux/rufus-scheduler
-      # tweet("hi")
-      # pictweet("hi", "cuteselfie.jpg")
-      tweet @model.make_statement
+    scheduler.every self.interval do
+        Ebooks::Archive.new(self.model)
+        @tweet_model = Ebooks::Model.consume('corpus/'+ self.model + '.json')
+        tweet @tweet_model.make_statement
     end
   end
 
@@ -44,7 +44,7 @@ class MyBot < Ebooks::Bot
   def on_mention(tweet)
     # Reply to a mention
     # reply(tweet, "oh hullo")
-    response_delay = rand(ENV['GAELAN_MAX_DELAY_MINUTES'].to_i)
+    response_delay = rand(self.config["response_delay"].to_i)
     scheduler.in "#{response_delay}m" do
       reply(tweet, @model.make_response(tweet.text))
     end
@@ -62,7 +62,14 @@ class MyBot < Ebooks::Bot
 end
 
 # Make a MyBot and attach it to an account
-MyBot.new("gaelan_bot") do |bot|
-  bot.access_token = ENV['TWITTER_ACCESS_TOKEN'] # Token connecting the app to this account
-  bot.access_token_secret = ENV['TWITTER_ACCESS_TOKEN_SECRET'] # Secret connecting the app to this account
+
+config = YAML.load(File.open("./config.yml"))
+
+for x in config["bots"]
+  MyBot.new(x["name"]) do |bot|
+    bot.access_token = x["access_token"]
+    bot.access_token_secret = x["access_token_secret"]
+    bot.model = x["model"]
+    bot.interval = x["interval"]
+  end
 end

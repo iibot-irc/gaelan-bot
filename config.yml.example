@@ -1,0 +1,20 @@
+consumer_key: <your-consumer-key>
+consumer_secret: <your-consumer-secret>
+
+blacklist:
+    - <twitter-user>
+
+response_delay: 5
+
+bots:
+    - name: <bot-name>
+      access_token: <>
+      access_token_secret: <>
+      model: <name-of-twitter-user-to-base-markov-model-on>
+      interval: <time-between-tweets>
+
+    - name: <bot-name>
+      access_token: <>
+      access_token_secret: <>
+      model: <name-of-bot-to-base-markov-model-on>
+      interval: <time-between-tweets>
