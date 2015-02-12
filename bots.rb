@@ -23,11 +23,17 @@ class MyBot < Ebooks::Bot
     self.delay_range = 1..6
   end
 
-  def on_startup
-    scheduler.every self.interval do
-        Ebooks::Archive.new(self.model)
+  def markov_tweet
+        @archive.sync
         @tweet_model = Ebooks::Model.consume('corpus/'+ self.model + '.json')
         tweet @tweet_model.make_statement
+  end
+
+  def on_startup
+    @archive = Ebooks::Archive.new(self.model)
+    self.markov_tweet
+    scheduler.every self.interval do
+      self.markov_tweet
     end
   end
 
@@ -46,7 +52,7 @@ class MyBot < Ebooks::Bot
     # reply(tweet, "oh hullo")
     response_delay = rand(self.config["response_delay"].to_i)
     scheduler.in "#{response_delay}m" do
-      reply(tweet, @model.make_response(tweet.text))
+      reply(tweet, @tweet_model.make_response(tweet.text))
     end
   end
 
